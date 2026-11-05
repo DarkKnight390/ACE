@@ -22,3 +22,14 @@
 - **Published branch:** `team-a/voice-engine-foundation`.
 - **Pushed commit:** `f69c911791b887b5fb4d84ffeee5a2f024421835` (`docs: record initial milestone push status`), including the foundation commit `ecff3cc`.
 - **Push status:** Verified; `HEAD` matches `origin/team-a/voice-engine-foundation`.
+
+## 2026-11-04 — Switch local STT to Faster-Whisper
+
+- **Implemented:** Replaced the remote OpenAI-compatible transcription adapter with a local Faster-Whisper adapter. Model loading is lazy and cached; synchronous inference runs off the asyncio event loop. Added configurable model, device, compute type, and optional language, defaulting to `small`/`cpu`/`int8` with automatic language detection.
+- **Why:** Use the requested local speech recognizer and remove the STT API endpoint/key dependency from the prototype.
+- **Files created or modified:** `pyproject.toml`, `.env.example`, `README.md`, `src/ace_voice/config.py`, `src/ace_voice/cli.py`, `src/ace_voice/providers/faster_whisper.py`; removed `src/ace_voice/providers/openai_compatible_stt.py`; updated `tests/test_providers.py`, added `tests/test_config.py`, and revised `docs/architecture/SYSTEM_ARCHITECTURE.md` and `docs/roadmap/TEAM_A_ROADMAP.md`. Updated ignored local `.env` STT settings without changing other configuration values.
+- **Dependencies introduced:** `faster-whisper>=1.1,<2` in the optional `audio` extra; its model weights are downloaded on first use.
+- **API/interface changes:** The internal `SpeechRecognizer` port remains unchanged. STT configuration now uses `ACE_STT_MODEL`, `ACE_STT_DEVICE`, `ACE_STT_COMPUTE_TYPE`, and optional `ACE_STT_LANGUAGE`; STT endpoint and API key settings are no longer used.
+- **Tests performed and results:** `python -m pip install -e ".[audio,test]"` succeeded with Faster-Whisper 1.2.1 installed. `python -m unittest discover -s tests -v` passed all 11 tests. `python -m compileall -q src tests` and `python -m pip check` succeeded. Pylance diagnostics for the changed adapter, CLI, config, and provider tests reported no issues after correction.
+- **Known limitations:** Real speech accuracy/performance and model download have not been tested end-to-end. Default CPU `int8` trades some speed/precision for broad hardware compatibility; CUDA or another model/compute type may be configured.
+- **Next implementation task:** Run the full test suite and editable install with audio extras; perform a local microphone/model smoke test when model download and hardware are available.

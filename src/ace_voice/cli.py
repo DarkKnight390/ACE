@@ -11,10 +11,8 @@ from ace_voice.config import Settings
 from ace_voice.conversation.engine import VoiceConversationEngine
 from ace_voice.models import ConversationSession, Message
 from ace_voice.providers.elevenlabs import ElevenLabsTextToSpeech
+from ace_voice.providers.faster_whisper import FasterWhisperSpeechRecognizer
 from ace_voice.providers.nvidia import NvidiaLanguageModel
-from ace_voice.providers.openai_compatible_stt import (
-    OpenAICompatibleSpeechRecognizer,
-)
 from ace_voice.session_log import JsonlSessionLogger
 
 
@@ -23,11 +21,11 @@ async def main() -> None:
     settings = Settings.from_env()
     timeout = httpx.Timeout(connect=10.0, read=90.0, write=30.0, pool=10.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
-        recognizer = OpenAICompatibleSpeechRecognizer(
-            client,
-            base_url=settings.stt_base_url,
-            model=settings.stt_model,
-            api_key=settings.stt_api_key,
+        recognizer = FasterWhisperSpeechRecognizer(
+            model_size=settings.stt_model,
+            device=settings.stt_device,
+            compute_type=settings.stt_compute_type,
+            language=settings.stt_language,
         )
         language_model = NvidiaLanguageModel(
             client,

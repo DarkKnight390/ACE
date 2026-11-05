@@ -4,7 +4,7 @@ ACE is a modular platform for AI-powered business conversations. Team A owns the
 
 ## Current state
 
-The repository currently contains the initial architecture/contracts and a local, CLI-first voice prototype. It records microphone audio, submits it to a configurable OpenAI-compatible transcription endpoint, streams text from NVIDIA, speaks complete phrases through ElevenLabs PCM streaming, and keeps context for the active process. It does not yet include a web UI, telephony provider, or production authentication.
+The repository currently contains the initial architecture/contracts and a local, CLI-first voice prototype. It records microphone audio, transcribes locally with Faster-Whisper, streams text from NVIDIA, speaks complete phrases through ElevenLabs PCM streaming, and keeps context for the active process. It does not yet include a web UI, telephony provider, or production authentication.
 
 ## Setup
 
@@ -17,9 +17,10 @@ python -m pip install -e ".[audio,test]"
 Copy-Item .env.example .env
 ```
 
-Set the endpoint, model, and credentials in `.env`:
+Configure speech recognition and set the provider credentials in `.env`:
 
-- `ACE_STT_BASE_URL`, `ACE_STT_MODEL`, and optionally `ACE_STT_API_KEY` must target an OpenAI-compatible `/audio/transcriptions` endpoint returning `{"text":"..."}`.
+- `ACE_STT_MODEL` selects the local Faster-Whisper model (default `small`); its weights download on first transcription.
+- `ACE_STT_DEVICE` and `ACE_STT_COMPUTE_TYPE` default to `cpu` and `int8`. Set `ACE_STT_LANGUAGE` to an ISO language code to disable language detection; leave it empty for automatic detection.
 - `ACE_NVIDIA_API_KEY` and `ACE_NVIDIA_MODEL` configure NVIDIA's chat-completions API.
 - `ACE_ELEVENLABS_API_KEY` and `ACE_ELEVENLABS_VOICE_ID` configure ElevenLabs.
 

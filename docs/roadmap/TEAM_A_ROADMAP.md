@@ -6,7 +6,7 @@
 
 ## CURRENT PROJECT STATUS — 2026-11-04
 
-- The initial local CLI milestone provides configurable speech transcription, NVIDIA streamed reasoning, phrase-based ElevenLabs PCM speech, local microphone/playback adapters, in-memory context, and metadata-only session logs.
+- The initial local CLI milestone provides local Faster-Whisper speech transcription, NVIDIA streamed reasoning, phrase-based ElevenLabs PCM speech, local microphone/playback adapters, in-memory context, and metadata-only session logs.
 - This is a development prototype, not a deployed service. Hardware/provider integration and its limitations are recorded in `docs/agents/AGENT_A_NOTES.md`.
 - Next: verify this baseline, then improve overlapping generation/playback, cancellation, and failure handling before VAD/barge-in or telephony.
 

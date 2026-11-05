@@ -22,9 +22,10 @@ def _base_url(name: str, value: str) -> str:
 
 @dataclass(frozen=True)
 class Settings:
-    stt_base_url: str
     stt_model: str
-    stt_api_key: str | None
+    stt_device: str
+    stt_compute_type: str
+    stt_language: str | None
     nvidia_base_url: str
     nvidia_api_key: str
     nvidia_model: str
@@ -36,9 +37,6 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
-        stt_url = _base_url(
-            "ACE_STT_BASE_URL", _required("ACE_STT_BASE_URL")
-        )
         nvidia_url = _base_url(
             "ACE_NVIDIA_BASE_URL",
             os.environ.get(
@@ -52,11 +50,14 @@ class Settings:
         if sample_rate < 8000 or sample_rate > 48000:
             raise ValueError("ACE_AUDIO_SAMPLE_RATE must be between 8000 and 48000")
 
-        stt_api_key = os.environ.get("ACE_STT_API_KEY", "").strip()
+        stt_language = os.environ.get("ACE_STT_LANGUAGE", "").strip()
         return cls(
-            stt_base_url=stt_url,
-            stt_model=_required("ACE_STT_MODEL"),
-            stt_api_key=stt_api_key or None,
+            stt_model=os.environ.get("ACE_STT_MODEL", "small").strip() or "small",
+            stt_device=os.environ.get("ACE_STT_DEVICE", "cpu").strip() or "cpu",
+            stt_compute_type=(
+                os.environ.get("ACE_STT_COMPUTE_TYPE", "int8").strip() or "int8"
+            ),
+            stt_language=stt_language or None,
             nvidia_base_url=nvidia_url,
             nvidia_api_key=_required("ACE_NVIDIA_API_KEY"),
             nvidia_model=_required("ACE_NVIDIA_MODEL"),

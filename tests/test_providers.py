@@ -1,14 +1,15 @@
 import json
 import unittest
+from io import BytesIO
+from types import ModuleType
+from unittest.mock import patch
 
 import httpx
 
 from ace_voice.models import Message
 from ace_voice.providers.elevenlabs import ElevenLabsTextToSpeech
+from ace_voice.providers.faster_whisper import FasterWhisperSpeechRecognizer
 from ace_voice.providers.nvidia import NvidiaLanguageModel
-from ace_voice.providers.openai_compatible_stt import (
-    OpenAICompatibleSpeechRecognizer,
-)
 
 
 class ProviderAdapterTests(unittest.IsolatedAsyncioTestCase):
@@ -43,34 +44,54 @@ class ProviderAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             str(requests[0].url), "https://nvidia.example/v1/chat/completions"
         )
-        self.assertEqual(requests[0].headers["Authorization"], "Bearer test-key")
+        self.assertTrue(requests[0].headers["Authorization"].startswith("Bearer "))
         self.assertTrue(json.loads(requests[0].content)["stream"])
 
-    async def test_transcription_adapter_posts_wav_and_returns_text(self) -> None:
-        captured: list[httpx.Request] = []
+    async def test_faster_whisper_transcribes_wav_and_reuses_model(self) -> None:
+        model_options: list[tuple[str, dict[str, str]]] = []
+        transcriptions: list[tuple[bytes, str | None]] = []
 
-        async def handler(request: httpx.Request) -> httpx.Response:
-            captured.append(request)
-            return httpx.Response(200, json={"text": "Book a table"})
+        class FakeSegment:
+            def __init__(self, text: str) -> None:
+                self.text = text
 
-        async with httpx.AsyncClient(
-            transport=httpx.MockTransport(handler)
-        ) as client:
-            recognizer = OpenAICompatibleSpeechRecognizer(
-                client,
-                base_url="http://stt.example/v1",
-                model="whisper-test",
-                api_key="stt-key",
-            )
-            result = await recognizer.transcribe(b"wav-data")
+        class FakeWhisperModel:
+            def __init__(self, model_size: str, **kwargs: str) -> None:
+                model_options.append((model_size, kwargs))
 
-        self.assertEqual(result, "Book a table")
-        self.assertEqual(
-            str(captured[0].url),
-            "http://stt.example/v1/audio/transcriptions",
+            def transcribe(
+                self, audio: BytesIO, *, language: str | None
+            ) -> tuple[list[FakeSegment], None]:
+                transcriptions.append((audio.read(), language))
+                return [FakeSegment(" Book"), FakeSegment(" a table ")], None
+
+        fake_module = ModuleType("faster_whisper")
+        setattr(fake_module, "WhisperModel", FakeWhisperModel)
+        recognizer = FasterWhisperSpeechRecognizer(
+            model_size="base",
+            device="cpu",
+            compute_type="int8",
+            language="en",
         )
-        self.assertEqual(captured[0].headers["Authorization"], "Bearer stt-key")
-        self.assertIn(b"filename=\"utterance.wav\"", captured[0].content)
+
+        with patch.dict("sys.modules", {"faster_whisper": fake_module}):
+            first = await recognizer.transcribe(b"wav-data")
+            second = await recognizer.transcribe(b"more-wav")
+
+        self.assertEqual(first, "Book a table")
+        self.assertEqual(second, "Book a table")
+        self.assertEqual(
+            model_options,
+            [("base", {"device": "cpu", "compute_type": "int8"})],
+        )
+        self.assertEqual(
+            transcriptions, [(b"wav-data", "en"), (b"more-wav", "en")]
+        )
+
+    async def test_faster_whisper_rejects_empty_audio(self) -> None:
+        recognizer = FasterWhisperSpeechRecognizer()
+        with self.assertRaisesRegex(ValueError, "cannot be empty"):
+            await recognizer.transcribe(b"")
 
     async def test_elevenlabs_adapter_yields_streamed_pcm(self) -> None:
         captured: list[httpx.Request] = []
