@@ -10,3 +10,9 @@
 - **Tests performed and results:** `python -m pip install -e ".[audio,test]"` succeeded on Python 3.14.6. `python -m unittest discover -s tests -v` passed all 8 tests, including mocked NVIDIA/ElevenLabs/STT streams, audio WAV/PCM framing, phrase segmentation, conversation context, and log redaction. `python -m compileall -q src tests` succeeded. Live microphone, speaker, and provider credentials were not exercised.
 - **Known limitations:** STT requires an operator-provided OpenAI-compatible transcription endpoint; live hardware and provider credentials have not been verified. The CLI has no web UI, authentication, VAD, barge-in, cancellation, retries, tool execution, telephony, persistent sessions, or production analytics. Model generation currently pauses while each phrase is synthesized/played.
 - **Next implementation task:** Perform a live local smoke test with configured credentials and hardware, then implement overlapping LLM/TTS streaming and cancellation in the next Team A iteration.
+
+## Post-commit follow-up — 2026-11-04
+
+- **Local commit:** `ecff3cc` (`feat: establish ACE voice engine foundation`).
+- **Push status:** `git push -u origin team-a/voice-engine-foundation` was attempted and failed because no GitHub credentials are available in this environment. The feature branch is local and is not published.
+- **Next action:** Configure Git Credential Manager or SSH authentication in the development environment, then push this branch and record the successful push.
