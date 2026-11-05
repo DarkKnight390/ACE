@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ace-voice"
+version = "0.1.0"
+description = "Modular local voice and intelligence prototype for ACE"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27,<1",
+]
+
+[project.optional-dependencies]
+audio = [
+    "sounddevice>=0.5",
+]
+test = []
+
+[project.scripts]
+ace-voice = "ace_voice.cli:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
